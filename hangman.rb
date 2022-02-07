@@ -1,5 +1,8 @@
 # A class for managing  a game of hangman.
 class Hangman
+
+  attr_reader :move
+
   def initialize
     @file = File.open('google-10000-english-no-swears.txt', 'r')
     @words = []
@@ -10,9 +13,6 @@ class Hangman
     @game_won = 0
   end
 
-  def move
-    @move
-  end
 
   def generate_array
     x = 0
@@ -26,8 +26,6 @@ class Hangman
     until @secret_word.length >= 5 && @secret_word.length <= 12
       @secret_word = @words.sample.chomp
     end
-    puts @secret_word
-    puts @secret_word.length
   end
 
   def concat_underscores
@@ -37,12 +35,12 @@ class Hangman
   end
 
   def obtain_user_input
-    puts "Please input a letter to guess the secret word!"
-    puts "#{@guess_word}"
+    puts 'Please input a letter to guess the secret word!'
+    puts @guess_word
     @letter = gets.chomp.downcase
     until @letter.length == 1 && @letter =~ /[A-Za-z]/
 
-      puts "Invalid Input!"
+      puts 'Invalid Input!'
       obtain_user_input
     end
   end
@@ -50,13 +48,21 @@ class Hangman
   def evaluate_input
     x = 0
     until x == @secret_word.length
-      puts @letter
       if @letter == @secret_word[x]
         @guess_word[x] = @secret_word[x]
+        flag = 1
       end
       x += 1
+    end
+      if flag == 1
+        return
+      else
+        @move += 1
+    end
+    if @move < 11
+    puts "It is now move #{@move} / 10"
+    end
   end
-end
 
 def check_victory
   return unless @guess_word == @secret_word
@@ -74,7 +80,7 @@ game.generate_array
 game.generate_secret_word
 game.concat_underscores
 
-while game.move < 10 || game
+while game.move <= 10
   game.obtain_user_input
   game.evaluate_input
   game.check_victory
