@@ -3,6 +3,7 @@ require 'yaml'
 # A class for managing  a game of hangman.
 class Hangman
   attr_reader :move, :game_won, :secret_word
+  attr_accessor :first_turn
 
   def initialize
     @file = File.open('google-10000-english-no-swears.txt', 'r')
@@ -13,6 +14,7 @@ class Hangman
     @move = 1
     @game_won = 0
     @flag = 0
+    @first_turn = 1
   end
 
   def generate_array
@@ -113,13 +115,17 @@ game.generate_secret_word
 game.concat_underscores
 game.ask_to_load
 while game.move <= 10
+  if game.first_turn != 1
   game.ask_to_save
+  end
   game.obtain_user_input
   game.evaluate_input
   game.evaluate_move_counter
   game.inform_move_number
   game.check_victory
   return if game.game_won == 1
+
+  game.first_turn = 0
 end
 
 puts "You weren't able to reveal the word in time. It was: #{game.secret_word}"
