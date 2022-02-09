@@ -1,7 +1,10 @@
+require 'yaml'
+require 'json'
+require 'msgpack'
+
 # A class for managing  a game of hangman.
 class Hangman
-
-  attr_reader :move
+  attr_reader :move, :game_won
 
   def initialize
     @file = File.open('google-10000-english-no-swears.txt', 'r')
@@ -11,8 +14,11 @@ class Hangman
     @letter = ''
     @move = 0
     @game_won = 0
+    @saved_game = ''
+    @save = ''
   end
 
+  
 
   def generate_array
     x = 0
@@ -70,8 +76,35 @@ def check_victory
   puts "You have guessed the secret word with #{10-@move} turns remaining"
 end
 
-def game_won
-  @game_won
+  def ask_to_save
+    puts "Enter 'save' if you want to save your game."
+    save = gets.chomp.downcase
+    return unless save == 'save'
+
+    save_game
+  end
+
+def save_game
+  data = YAML.dump({ :secret_word => @secret_word,
+                     :move => @move,
+                     :guess_word => @guess_word })
+  File.open("saved_game.yml", "w")
+  File.write("saved_game.yml", data)
+end
+
+  def ask_to_load
+    puts "Do you want to load your previously saved game? 'Y or dismissed."
+    answer = gets.chomp.upcase
+    return unless answer == 'Y'
+
+    load_game
+  end
+
+  def load_game
+    data = YAML.load_file('saved_game.yml')
+    @secret_word = data[:secret_word]
+    @move = data[:move]
+    @guess_word = data[:guess_word]
 end
 end
 
@@ -79,8 +112,9 @@ game = Hangman.new
 game.generate_array
 game.generate_secret_word
 game.concat_underscores
-
+game.ask_to_load
 while game.move <= 10
+  game.ask_to_save
   game.obtain_user_input
   game.evaluate_input
   game.check_victory
