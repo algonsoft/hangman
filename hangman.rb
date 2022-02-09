@@ -1,10 +1,8 @@
 require 'yaml'
-require 'json'
-require 'msgpack'
 
 # A class for managing  a game of hangman.
 class Hangman
-  attr_reader :move, :game_won
+  attr_reader :move, :game_won, :secret_word
 
   def initialize
     @file = File.open('google-10000-english-no-swears.txt', 'r')
@@ -12,13 +10,10 @@ class Hangman
     @secret_word = 'test'
     @guess_word = '____'
     @letter = ''
-    @move = 0
+    @move = 1
     @game_won = 0
-    @saved_game = ''
-    @save = ''
+    @flag = 0
   end
-
-  
 
   def generate_array
     x = 0
@@ -29,15 +24,11 @@ class Hangman
   end
 
   def generate_secret_word
-    until @secret_word.length >= 5 && @secret_word.length <= 12
-      @secret_word = @words.sample.chomp
-    end
+    @secret_word = @words.sample.chomp until @secret_word.length >= 5 && @secret_word.length <= 12
   end
 
   def concat_underscores
-    until @guess_word.length == @secret_word.length
-      @guess_word.concat('_')
-    end
+    @guess_word.concat('_') until @guess_word.length == @secret_word.length
   end
 
   def obtain_user_input
@@ -52,29 +43,35 @@ class Hangman
   end
 
   def evaluate_input
+    @flag = 0
     x = 0
     until x == @secret_word.length
       if @letter == @secret_word[x]
         @guess_word[x] = @secret_word[x]
-        flag = 1
+        @flag = 1
       end
       x += 1
     end
-      if flag == 1
-        return
-      else
-        @move += 1
-    end
-    if @move < 11
-    puts "It is now move #{@move} / 10"
-    end
   end
 
-def check_victory
-  return unless @guess_word == @secret_word
-  @game_won = 1
-  puts "You have guessed the secret word with #{10-@move} turns remaining"
-end
+  def evaluate_move_counter
+    return unless @flag.zero?
+
+    @move += 1
+  end
+
+  def inform_move_number
+    return unless @move <= 10
+
+    puts "It is now move #{@move} / 10"
+  end
+
+  def check_victory
+    return unless @guess_word == @secret_word
+
+    @game_won = 1
+    puts "You have guessed the secret word: [#{secret_word}] with #{10 - @move} moves remaining"
+  end
 
   def ask_to_save
     puts "Enter 'save' if you want to save your game."
@@ -84,13 +81,15 @@ end
     save_game
   end
 
-def save_game
-  data = YAML.dump({ :secret_word => @secret_word,
-                     :move => @move,
-                     :guess_word => @guess_word })
-  File.open("saved_game.yml", "w")
-  File.write("saved_game.yml", data)
-end
+  def save_game
+    data = YAML.dump({ secret_word: @secret_word,
+                       move: @move,
+                       guess_word: @guess_word })
+    File.open('saved_game.yml', 'w')
+    File.write('saved_game.yml', data)
+    puts 'Game has been saved successfully'
+    exit
+  end
 
   def ask_to_load
     puts "Do you want to load your previously saved game? 'Y or dismissed."
@@ -105,7 +104,7 @@ end
     @secret_word = data[:secret_word]
     @move = data[:move]
     @guess_word = data[:guess_word]
-end
+  end
 end
 
 game = Hangman.new
@@ -117,8 +116,10 @@ while game.move <= 10
   game.ask_to_save
   game.obtain_user_input
   game.evaluate_input
+  game.evaluate_move_counter
+  game.inform_move_number
   game.check_victory
-  if game.game_won == 1
-    return
-  end
+  return if game.game_won == 1
 end
+
+puts "You weren't able to reveal the word in time. It was: #{game.secret_word}"
